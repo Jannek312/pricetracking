@@ -2,6 +2,9 @@ package de.jannek.price.tracking;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,7 +22,11 @@ public class PriceTracking {
         new PriceTracking().run();
     }
 
+    private final Logger logger = LogManager.getLogger(this.getClass());
+
     public void run() {
+        DOMConfigurator.configure("log4j.xml");
+
         connectToDatabase();
     }
 
@@ -28,6 +35,7 @@ public class PriceTracking {
         final HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:mysql://localhost:3306/price_tracking");
         config.setUsername("root");
+
 
         final HikariDataSource dataSource = new HikariDataSource(config);
 
@@ -41,7 +49,7 @@ public class PriceTracking {
                     version = version.replace("Maria", "Maria-and-Joseph");
                 }
 
-                System.out.println(String.format("Connected to database version %s", version));
+                logger.info(String.format("Connected to database version %s", version));
             }
 
         } catch (SQLException exception) {
