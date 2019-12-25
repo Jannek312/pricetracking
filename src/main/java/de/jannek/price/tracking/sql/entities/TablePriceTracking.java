@@ -1,5 +1,6 @@
-package de.jannek.price.tracking.sql;
+package de.jannek.price.tracking.sql.entities;
 
+import io.ebean.Model;
 import lombok.Data;
 
 import javax.persistence.Entity;
@@ -15,7 +16,7 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "price_tracking")
 @Data
-public class TablePriceTracking {
+public class TablePriceTracking extends Model {
 
     @Id
     private int trackingId;

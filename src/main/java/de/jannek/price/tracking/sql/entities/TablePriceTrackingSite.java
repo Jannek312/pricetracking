@@ -1,4 +1,4 @@
-package de.jannek.price.tracking.sql;
+package de.jannek.price.tracking.sql.entities;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -8,7 +8,8 @@ import javax.persistence.Table;
  * User: Jannek Behrens
  * Timestamp: 19/12/2019 23:08
  */
- @Entity
- @Table(name = "price_tracking_raw_data")
-public class TablePriceTrackingRawData {
+
+@Entity
+@Table(name = "price_tracking_site")
+public class TablePriceTrackingSite {
 }

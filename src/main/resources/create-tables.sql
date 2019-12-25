@@ -2,12 +2,14 @@
 /**/
 create table price_tracking
 (
-	tracking_id int auto_increment,
-	price float null,
-	created_at timestamp default CURRENT_TIME not null,
-	constraint price_tracking_pk
-		primary key (tracking_id)
+    tracking_id int auto_increment,
+    price float null,
+    created_at timestamp default CURRENT_TIME() null,
+    constraint price_tracking_pk
+        primary key (tracking_id)
 );
+
+
 
 
 create table price_tracking_raw_data

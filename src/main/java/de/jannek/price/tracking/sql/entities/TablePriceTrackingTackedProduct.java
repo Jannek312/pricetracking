@@ -1,4 +1,4 @@
-package de.jannek.price.tracking.sql;
+package de.jannek.price.tracking.sql.eneities;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -9,6 +9,6 @@ import javax.persistence.Table;
  * Timestamp: 19/12/2019 23:08
  */
 @Entity
-@Table(name = "price_tracking_site")
-public class TablePriceTrackingSite {
+@Table(name = "price_tracking_tracked_product")
+public class TablePriceTrackingTackedProduct {
 }

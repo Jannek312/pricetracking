@@ -17,4 +17,5 @@ TODO
 
 * Logging
 * Config
+* Use random user agents. 
 * Installation and Usage in this file O.o
