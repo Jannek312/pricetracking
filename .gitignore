@@ -33,3 +33,5 @@ bin
 .project
 out
 target
+
+price-tracking.properties

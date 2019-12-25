@@ -11,12 +11,14 @@ import javax.persistence.Table;
  * User: Jannek Behrens
  * Timestamp: 19/12/2019 23:07
  */
+
 @Entity
-@Table(name = "price_tracking")
+@Table(name = "price_tracking_data")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class TablePriceTracking extends BaseModel {
+public class TablePriceTrackingData extends BaseModel {
 
     @NotNull
     private long productId;

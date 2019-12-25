@@ -2,7 +2,7 @@ package de.jannek.price.tracking;
 
 import de.jannek.price.tracking.sql.Database;
 import de.jannek.price.tracking.sql.DatabaseConfiguration;
-import de.jannek.price.tracking.sql.entities.TablePriceTracking;
+import de.jannek.price.tracking.sql.entities.TablePriceTrackingData;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingSite;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingTackedProduct;
 import io.ebean.EbeanServer;
@@ -11,7 +11,9 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
+import java.io.*;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +24,8 @@ import java.util.regex.Pattern;
  */
 public class PriceTracking {
 
+    private static final String PROPERTIES_FILENAME = "price-tracking.properties";
+
     public static void main(String[] args) {
         new PriceTracking().run();
     }
@@ -31,13 +35,22 @@ public class PriceTracking {
     @Getter
     private EbeanServer sqlServer;
 
+    @Getter
+    private Properties properties;
+
     public void run() {
         DOMConfigurator.configure("log4j.xml");
-        connectToDatabase();
 
-        if (false) {
-
+        if (!loadProperties()) {
+            logger.error(String.format("Could not load properties!"));
+            return;
         }
+
+        if (!connectToDatabase()) {
+            logger.error(String.format("Could not connect to database!"));
+            return;
+        }
+
 
         final List<TablePriceTrackingSite> sites =
                 sqlServer.find(TablePriceTrackingSite.class).findList();
@@ -65,10 +78,10 @@ public class PriceTracking {
                     logger.info(String.format("Price: %f", price));
 
 
-                    final TablePriceTracking tablePriceTracking = new TablePriceTracking(product.getId(), price);
-                    sqlServer.save(tablePriceTracking);
+                    final TablePriceTrackingData tablePriceTrackingData = new TablePriceTrackingData(product.getId(), price);
+                    sqlServer.save(tablePriceTrackingData);
 
-                    logger.info(String.format("Saved to database! ID: %d", tablePriceTracking.getId()));
+                    logger.info(String.format("Saved to database! ID: %d", tablePriceTrackingData.getId()));
 
                 } catch (Exception e) {
                     System.out.println(String.format("Error while trying to get price from product %d", product.getId()));
@@ -85,10 +98,45 @@ public class PriceTracking {
 
     }
 
-    private void connectToDatabase() {
-        DatabaseConfiguration databaseConfiguration = new DatabaseConfiguration();
+    private boolean loadProperties() {
+        final Properties properties = new Properties();
+        try {
+            final File file = new File(PROPERTIES_FILENAME);
+            if (file.createNewFile()) {
 
-        this.sqlServer = new Database().createServer(databaseConfiguration);
+                //copy default properties
+
+                final InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILENAME);
+                final byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
+
+                final OutputStream outputStream = new FileOutputStream(file);
+                outputStream.write(buffer);
+
+                logger.warn(String.format("Please set up %s file!", PROPERTIES_FILENAME));
+                return false;
+            } else {
+                properties.load(new FileInputStream(file));
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        this.properties = properties;
+        return true;
+    }
+
+    private boolean connectToDatabase() {
+        DatabaseConfiguration databaseConfiguration = null;
+
+        try {
+            this.sqlServer = new Database().createServer(databaseConfiguration);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
 }
