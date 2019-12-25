@@ -1,4 +1,4 @@
-package de.jannek.price.tracking.sql.eneities;
+package de.jannek.price.tracking.sql.entities;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -10,5 +10,8 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "price_tracking_tracked_product")
-public class TablePriceTrackingTackedProduct {
+public class TablePriceTrackingTackedProduct extends BaseModel {
+
+    private String url;
+
 }

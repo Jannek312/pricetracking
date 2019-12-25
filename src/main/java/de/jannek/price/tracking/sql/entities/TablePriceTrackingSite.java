@@ -11,5 +11,10 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "price_tracking_site")
-public class TablePriceTrackingSite {
+public class TablePriceTrackingSite extends BaseModel {
+
+    private String name;
+    private String urlRegex;
+    private String priceRegex;
+
 }

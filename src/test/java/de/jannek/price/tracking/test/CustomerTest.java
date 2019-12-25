@@ -1,6 +1,5 @@
 package de.jannek.price.tracking.test;
 
-import de.jannek.price.tracking.sql.Customer;
 import io.ebean.DB;
 import org.junit.Test;
 

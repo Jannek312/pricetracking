@@ -1,12 +1,9 @@
 package de.jannek.price.tracking.sql.entities;
 
-import io.ebean.Model;
 import lombok.Data;
 
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.Table;
-import java.sql.Timestamp;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,12 +13,9 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "price_tracking")
 @Data
-public class TablePriceTracking extends Model {
+public class TablePriceTracking extends BaseModel {
 
-    @Id
-    private int trackingId;
     private double price;
-    private Timestamp createdAt;
 
 
 }

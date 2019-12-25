@@ -10,12 +10,12 @@ import java.io.IOException;
  */
 public class GenerateDbMigration {
 
-  public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-    DbMigration dbMigration = DbMigration.create();
-    dbMigration.setPlatform(Platform.POSTGRES);
+        DbMigration dbMigration = DbMigration.create();
+        dbMigration.setPlatform(Platform.POSTGRES);
 
-    // generate the migration ddl and xml
-    dbMigration.generateMigration();
-  }
+        // generate the migration ddl and xml
+        dbMigration.generateMigration();
+    }
 }

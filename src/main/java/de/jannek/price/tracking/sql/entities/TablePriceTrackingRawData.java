@@ -1,7 +1,6 @@
 package de.jannek.price.tracking.sql.entities;
 
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
@@ -11,10 +10,8 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "price_tracking_raw_data")
-public class TablePriceTrackingRawData {
+public class TablePriceTrackingRawData extends BaseModel {
 
-    @Id
-    private int trackingId;
     private String data;
 
 }
