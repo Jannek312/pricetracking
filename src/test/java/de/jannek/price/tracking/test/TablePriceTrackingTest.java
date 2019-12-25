@@ -1,6 +1,6 @@
 package de.jannek.price.tracking.test;
 
-import de.jannek.price.tracking.sql.TablePriceTracking;
+import de.jannek.price.tracking.sql.entities.TablePriceTracking;
 import io.ebean.DB;
 import org.junit.Test;
 
@@ -17,7 +17,8 @@ public class TablePriceTrackingTest {
         priceTracking.setPrice(329.65);
         DB.save(priceTracking);
 
-        final TablePriceTracking foundPriceTracking = DB.find(TablePriceTracking.class, 1);
+        final TablePriceTracking foundPriceTracking = DB.find(TablePriceTracking.class)
+                .where().eq("price", 329.65).findOne();
 
         DB.delete(foundPriceTracking);
 

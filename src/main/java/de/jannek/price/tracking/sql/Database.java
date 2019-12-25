@@ -13,28 +13,23 @@ public class Database {
         return database;
     }
 
-    public EbeanServer createServer(
-            final String username,
-            final String password,
-            final String hostname,
-            final int port,
-            final String database,
-            final int maxConnections) {
+    public EbeanServer createServer(final DatabaseConfiguration databaseConfiguration) {
 
         final DataSourceConfig dataSourceConfig = new DataSourceConfig();
-        dataSourceConfig.setDriver("com.mysql.jdbc.Driver");
-        dataSourceConfig.setUsername(username);
-        dataSourceConfig.setPassword(password);
-        dataSourceConfig.setUrl(String.format("jdbc:mysql://%s:%s/%s?useUnicode=yes&characterEncoding=UTF-8",
-                hostname,
-                port,
-                database));
+        dataSourceConfig.setDriver("com.mysql.cj.jdbc.Driver");
+        dataSourceConfig.setUsername(databaseConfiguration.getUsername());
+        dataSourceConfig.setPassword(databaseConfiguration.getPassword());
+
+        dataSourceConfig.setUrl(String.format("jdbc:mysql://%s:%d/%s",
+                databaseConfiguration.getHostname(),
+                databaseConfiguration.getPort(),
+                databaseConfiguration.getDatabase()));
 
         dataSourceConfig.setHeartbeatSql("SELECT 1 FROM dual");
-        dataSourceConfig.setMaxConnections(maxConnections);
+        dataSourceConfig.setMaxConnections(databaseConfiguration.getMaxConnections());
 
         ServerConfig config = new ServerConfig();
-        config.setName(String.format("%s-%s", hostname, database));
+        config.setName(String.format("%s-%s", databaseConfiguration.getHostname(), databaseConfiguration.getDatabase()));
         config.setDataSourceConfig(dataSourceConfig);
         config.setDdlGenerate(true);
         config.setDdlRun(false);
@@ -42,7 +37,6 @@ public class Database {
         config.setDefaultServer(false);
 
         config.addPackage("de.jannek.price.tracking.sql.entities");
-        //config.addClass(CLASS.class);
 
         return this.database = EbeanServerFactory.create(config);
     }

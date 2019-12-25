@@ -1,5 +1,5 @@
-entity-packages: de.jannek.price.tracking.sql
-transactional-packages: de.jannek.price.tracking
-querybean-packages: de.jannek.price.tracking
+entity-packages: de.jannek.price.tracking.sql.entities
+transactional-packages: de.jannek.price.tracking.sql.entities
+querybean-packages: de.jannek.price.tracking.sql.entities
 profile-location: true
 
