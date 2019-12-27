@@ -6,8 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,10 +22,11 @@ import javax.persistence.Table;
 @NoArgsConstructor
 public class TablePriceTrackingDataRaw extends BaseModel {
 
-    @NotNull
-    private long trackingId;
+    @OneToOne(mappedBy = "rawData")
+    @JoinColumn(name = "id")
+    private TablePriceTrackingData data;
 
-    @NotNull
-    private String data;
+    @Lob @NotNull
+    private byte[] rawData;
 
 }

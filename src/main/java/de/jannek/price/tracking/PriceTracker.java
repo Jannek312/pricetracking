@@ -83,7 +83,7 @@ public class PriceTracker implements Runnable {
                 final String content = new WebRequest().getContent(product.getUrl());
                 logger.info(String.format("Done! length: %d (%s...)", content.length(), content.substring(0, 20)));
 
-                final String pageTitle = Normalizer.normalize(content.substring(content.indexOf("<title>")+"<title>".length(), content.indexOf("</title>")), Normalizer.Form.NFKC);
+                final String pageTitle = Normalizer.normalize(content.substring(content.indexOf("<title>") + "<title>".length(), content.indexOf("</title>")), Normalizer.Form.NFKC);
 
                 sites.forEach(site -> site.getTablePriceTrackingSiteRegexes().forEach(siteRegex -> {
                     final Matcher matcher = Pattern.compile(siteRegex.getPriceRegex()).matcher(content);
@@ -98,11 +98,6 @@ public class PriceTracker implements Runnable {
 
                     final TablePriceTrackingData lastData = findLastData(product.getId(), siteRegex.getType());
                     final boolean priceChanged = lastData == null || lastData.getPrice() != price;
-                    if (saveRaw && priceChanged) {
-                        final TablePriceTrackingDataRaw rawData = new TablePriceTrackingDataRaw(product.getId(), content);
-                        sqlServer.save(rawData);
-                    }
-
                     if (priceChanged) {
                         logger.info(String.format("Price %s changed from %.2f to %.2f for product %d", siteRegex.getType(),
                                 lastData == null ? 0 : lastData.getPrice(),
@@ -116,8 +111,14 @@ public class PriceTracker implements Runnable {
                         return;
                     }
 
-                    final TablePriceTrackingData trackingData = new TablePriceTrackingData(product.getId(), siteRegex.getType(), price);
+                    final TablePriceTrackingData trackingData = new TablePriceTrackingData(product, siteRegex.getType(), price, null);
                     sqlServer.save(trackingData);
+
+                    if (saveRaw && priceChanged) {
+                        final TablePriceTrackingDataRaw rawData = new TablePriceTrackingDataRaw(trackingData, content.getBytes());
+                        sqlServer.save(rawData);
+                    }
+
                     logger.info(String.format("Saved %s price of product %d to database! ID: %d", siteRegex.getType(), product.getId(), trackingData.getId()));
 
 
@@ -136,7 +137,8 @@ public class PriceTracker implements Runnable {
 
             final String content;
             if (oldPrice == null) {
-                if (PriceTracking.INIT_DATA) webhookConfiguration.setEnabled(false); //TODO remove; only send first product to prevent spam ;)
+                if (PriceTracking.INIT_DATA)
+                    webhookConfiguration.setEnabled(false); //TODO remove; only send first product to prevent spam ;)
                 content = String.format(webhookConfiguration.getContentPriceNew(), productName, productUrl, newPrice);
             } else if (newPrice < oldPrice) {
                 content = String.format(webhookConfiguration.getContentPriceDown(), productName, productUrl, oldPrice, newPrice, (100 / oldPrice * newPrice));

@@ -7,6 +7,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
@@ -23,13 +25,16 @@ import javax.persistence.Table;
 @NoArgsConstructor
 public class TablePriceTrackingData extends BaseModel {
 
-    @NotNull
-    private long productId;
+    @ManyToOne()
+    private TablePriceTrackingTackedProduct product;
 
     @NotNull
     private String type;
 
     @NotNull
     private double price;
+
+    @OneToOne(mappedBy = "data")
+    private TablePriceTrackingDataRaw rawData;
 
 }

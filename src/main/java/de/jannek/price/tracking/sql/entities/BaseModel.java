@@ -1,7 +1,6 @@
 package de.jannek.price.tracking.sql.entities;
 
 import io.ebean.Model;
-import io.ebean.annotation.DbDefault;
 import io.ebean.annotation.WhenCreated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,8 +26,5 @@ public abstract class BaseModel extends Model {
 
     @WhenCreated
     protected Instant whenCreated;
-
-    @DbDefault(value = "true")
-    protected boolean enabled;
 
 }

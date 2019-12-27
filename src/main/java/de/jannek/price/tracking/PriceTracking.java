@@ -113,24 +113,24 @@ public class PriceTracking {
 
 
             logger.info("Adding products");
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07G9J35CQ/"));
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B06XP9N2VP/"));
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07GRTYDDV/"));
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/dp/B001D7UYBO//"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07G9J35CQ/", null, true));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B06XP9N2VP/", null, true));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07GRTYDDV/", null, true));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/dp/B001D7UYBO//", null, true));
 
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mindfactory.de/product_info.php/be-quiet--Dark-Base-Pro-900-Rev--2-gedaemmt-mit-Sichtfenster-Big-Tower-_1256121.html"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mindfactory.de/product_info.php/be-quiet--Dark-Base-Pro-900-Rev--2-gedaemmt-mit-Sichtfenster-Big-Tower-_1256121.html", null, true));
 
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mediamarkt.de/de/product/_htc-vive-pro-full-kit-2436298.html"));
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mediamarkt.de/de/product/_call-of-duty-modern-warfare-action-xbox-one-2564145.html"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mediamarkt.de/de/product/_htc-vive-pro-full-kit-2436298.html", null, true));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mediamarkt.de/de/product/_call-of-duty-modern-warfare-action-xbox-one-2564145.html", null, true));
 
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/lagoon-anc-explorer.html"));
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/amiron-wireless-copper.html?cid=mm_produkt"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/lagoon-anc-explorer.html", null, true));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/amiron-wireless-copper.html", null, true));
 
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.saturn.de/de/product/_htc-vive-wlan-adapter-2478414.html"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.saturn.de/de/product/_htc-vive-wlan-adapter-2478414.html", null, true));
 
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://store.google.com/de/product/pixel_stand?hl=en-DE"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://store.google.com/de/product/pixel_stand?hl=en-DE", null, true));
 
-            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.alternate.de/Samsung/860-QVO-1-TB-Solid-State-Drive/html/product/1504256"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.alternate.de/Samsung/860-QVO-1-TB-Solid-State-Drive/html/product/1504256", null, true));
         }
 
         final WebhookConfiguration webhookConfiguration = new WebhookConfiguration(
@@ -141,7 +141,13 @@ public class PriceTracking {
                 properties.getProperty("webhook.content.price.down"),
                 properties.getProperty("webhook.content.price.new"));
 
-        new Thread(new PriceTracker(sqlServer, false, 120, true, webhookConfiguration), "Price_Tracker").start();
+        final PriceTracker priceTracker = new PriceTracker(sqlServer,
+                Boolean.parseBoolean(properties.getProperty("tracking.save.raw.data")),
+                Integer.parseInt(properties.getProperty("tracking.interval")),
+                Boolean.parseBoolean(properties.getProperty("tracking.only.save.changes")),
+                webhookConfiguration);
+
+        new Thread(priceTracker, "Price_Tracker").start();
 
 
     }
