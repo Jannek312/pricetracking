@@ -7,7 +7,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Entity;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,7 +31,7 @@ public class TablePriceTrackingSite extends BaseModel {
     @NotNull
     private String urlRegex;
 
-    @NotNull
-    private String priceRegex;
+    @OneToMany(mappedBy = "site")
+    private List<TablePriceTrackingSiteRegex> tablePriceTrackingSiteRegexes;
 
 }

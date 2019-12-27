@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DatabaseConfiguration {
 
-    private String hostname;
-    private int port;
-    private String database;
+    private String url;
 
     private String username;
     private String password;

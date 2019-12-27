@@ -2,8 +2,8 @@ package de.jannek.price.tracking;
 
 import de.jannek.price.tracking.sql.Database;
 import de.jannek.price.tracking.sql.DatabaseConfiguration;
-import de.jannek.price.tracking.sql.entities.TablePriceTrackingData;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingSite;
+import de.jannek.price.tracking.sql.entities.TablePriceTrackingSiteRegex;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingTackedProduct;
 import io.ebean.EbeanServer;
 import lombok.Getter;
@@ -12,9 +12,9 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
  * Timestamp: 19/12/2019 22:02
  */
 public class PriceTracking {
+
+    public static final boolean INIT_DATA = true; //TODO remove
 
     private static final String PROPERTIES_FILENAME = "price-tracking.properties";
 
@@ -52,49 +54,61 @@ public class PriceTracking {
         }
 
 
-        final List<TablePriceTrackingSite> sites =
-                sqlServer.find(TablePriceTrackingSite.class).findList();
-
-        final List<TablePriceTrackingTackedProduct> products =
-                sqlServer.find(TablePriceTrackingTackedProduct.class).findList();
+        if (INIT_DATA) {
 
 
-        while (true) {
+            logger.info(String.format(""));
+            logger.info(String.format("Adding Site amazon.de"));
+            final TablePriceTrackingSite siteAmazonDe = new TablePriceTrackingSite("Amazon.de",
+                    Pattern.compile("^https://(www.)?amazon\\.de.*").pattern(),
+                    null);
 
-            for (final TablePriceTrackingTackedProduct product : products) {
-                try {
-                    logger.info(String.format("Scanning content of product %d (%s)", product.getId(), product.getUrl()));
-                    final String content = new WebRequest().getContent(product.getUrl());
-                    logger.info(String.format("Done! length: %d (%s...)", content.length(), content.substring(0, 20)));
+            final TablePriceTrackingSite siteMindfactory = new TablePriceTrackingSite("mindfactory.de",
+                    Pattern.compile("^https://(www.)?mindfactory\\.de.*").pattern(),
+                    null);
 
-                    final Matcher matcher = Pattern.compile(sites.get(0).getPriceRegex()).matcher(content);
-                    final double price;
+            final TablePriceTrackingSite siteMediamarkt = new TablePriceTrackingSite("mediamarkt.de",
+                    Pattern.compile("^https://(www.)?mediamarkt\\.de.*").pattern(),
+                    null);
 
-                    if (matcher.find() || matcher.matches()) {
-                        String group = matcher.group(1);
-                        price = Double.parseDouble(group);
-                    } else price = 0;
-
-                    logger.info(String.format("Price: %f", price));
-
-
-                    final TablePriceTrackingData tablePriceTrackingData = new TablePriceTrackingData(product.getId(), price);
-                    sqlServer.save(tablePriceTrackingData);
-
-                    logger.info(String.format("Saved to database! ID: %d", tablePriceTrackingData.getId()));
-
-                } catch (Exception e) {
-                    System.out.println(String.format("Error while trying to get price from product %d", product.getId()));
-                    e.printStackTrace();
-                }
-            }
+            final TablePriceTrackingSite siteBeyerdynamic = new TablePriceTrackingSite("beyerdynamic.de",
+                    Pattern.compile("^https://(www.)?beyerdynamic\\.de.*").pattern(),
+                    null);
 
 
-            try {
-                Thread.sleep(1000 * 10);
-            } catch (InterruptedException ignored) {
-            }
+            sqlServer.save(siteAmazonDe);
+            sqlServer.save(siteMindfactory);
+            sqlServer.save(siteMediamarkt);
+            sqlServer.save(siteBeyerdynamic);
+
+            logger.info(String.format("Adding regex"));
+            List<TablePriceTrackingSiteRegex> regexes = new ArrayList<>();
+            regexes.add(new TablePriceTrackingSiteRegex(siteAmazonDe, "main", "data-asin-price=\"([0-9]+(?:\\.[0-9]{0,2}))?\""));
+            regexes.add(new TablePriceTrackingSiteRegex(siteAmazonDe, "used", Pattern.compile("<span\\sclass='a-color-price'>([0-9]+(?:\\,[0-9]{0,2}))?").pattern()));
+            regexes.add(new TablePriceTrackingSiteRegex(siteMindfactory, "main", "'Artikelpreis':([0-9]+(?:\\.[0-9]{0,2}))?,")); //'Artikelpreis':225.61,
+            regexes.add(new TablePriceTrackingSiteRegex(siteMediamarkt, "main", Pattern.compile("\\{\"currency\":\"EUR\",\"price\":([0-9]+(?:\\.[0-9]{0,2})?),\"").pattern())); //{"currency":"EUR","price":59.99,"
+            regexes.add(new TablePriceTrackingSiteRegex(siteBeyerdynamic, "main", Pattern.compile("<meta\\sproperty=\"product:price:amount\"\\scontent=\"([0-9]+(?:\\.[0-9]{0,2})?)\"/><script\\ssrc=\".{5,400}\"\\scrossorigin=\"anonymous\"></script>").pattern())); //<meta property="product:price:amount" content="299.00"/><script src="https://polyfill.io/v3/polyfill.min.js?features=default%2CArray.prototype.includes%2CPromise" crossorigin="anonymous"></script>
+            regexes.forEach(sqlServer::save);
+
+
+            logger.info(String.format("Adding products"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07G9J35CQ/"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B06XP9N2VP/"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07GRTYDDV/"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/dp/B001D7UYBO//"));
+
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mindfactory.de/product_info.php/be-quiet--Dark-Base-Pro-900-Rev--2-gedaemmt-mit-Sichtfenster-Big-Tower-_1256121.html"));
+
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mediamarkt.de/de/product/_htc-vive-pro-full-kit-2436298.html"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.mediamarkt.de/de/product/_call-of-duty-modern-warfare-action-xbox-one-2564145.html"));
+
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/lagoon-anc-explorer.html"));
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/amiron-wireless-copper.html?cid=mm_produkt"));
         }
+
+
+        new Thread(new PriceTracker(sqlServer, false, 120, true), "Price_Tracker").start();
+
 
     }
 
@@ -128,7 +142,11 @@ public class PriceTracking {
     }
 
     private boolean connectToDatabase() {
-        DatabaseConfiguration databaseConfiguration = null;
+        DatabaseConfiguration databaseConfiguration = new DatabaseConfiguration(
+                properties.getProperty("database.jdbc.url"),
+                properties.getProperty("database.username"),
+                properties.getProperty("database.password"),
+                Integer.parseInt(properties.getProperty("database.max.connections")));
 
         try {
             this.sqlServer = new Database().createServer(databaseConfiguration);
