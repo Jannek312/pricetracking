@@ -25,15 +25,12 @@ import java.util.regex.Pattern;
  */
 public class PriceTracking {
 
-    public static boolean INIT_DATA = true; //TODO remove
+    public static boolean INIT_DATA = false; //TODO remove
 
     private static final String PROPERTIES_FILENAME = "price-tracking.properties";
 
     public static void main(String[] args) {
-        if (args != null && args.length == 1 && args[0].toLowerCase().equals("true")) {
-            INIT_DATA = true;
-        }
-        new PriceTracking().run();
+        new PriceTracking().run(args);
     }
 
     private final Logger logger = LogManager.getLogger(this.getClass());
@@ -44,13 +41,21 @@ public class PriceTracking {
     @Getter
     private Properties properties;
 
-    private void run() {
+    private void run(String[] args) {
         DOMConfigurator.configure("log4j.xml");
 
         if (!loadProperties()) {
             logger.error("Could not load properties!");
             return;
         }
+
+        if (args != null && args.length == 1) {
+            final String arg0 = args[0].toLowerCase();
+            INIT_DATA = arg0.equals("true");
+        } else {
+            INIT_DATA = Boolean.parseBoolean(properties.getProperty("init"));
+        }
+
 
         if (!connectToDatabase()) {
             logger.error("Could not connect to database!");
@@ -102,12 +107,12 @@ public class PriceTracking {
             logger.info("Adding regex");
             List<TablePriceTrackingSiteRegex> regexes = new ArrayList<>();
             regexes.add(new TablePriceTrackingSiteRegex(siteAmazonDe, "main", "data-asin-price=\"([0-9]+(?:\\.[0-9]{0,2}))?\""));
-            regexes.add(new TablePriceTrackingSiteRegex(siteAmazonDe, "used", Pattern.compile("<span\\sclass='a-color-price'>([0-9]+(?:\\,[0-9]{0,2}))?").pattern()));
+            regexes.add(new TablePriceTrackingSiteRegex(siteAmazonDe, "used", Pattern.compile("<span\\sclass='a-color-price'>([0-9]+(?:,[0-9]{0,2}))?").pattern()));
             regexes.add(new TablePriceTrackingSiteRegex(siteMindfactory, "main", "'Artikelpreis':([0-9]+(?:\\.[0-9]{0,2}))?,")); //'Artikelpreis':225.61,
             regexes.add(new TablePriceTrackingSiteRegex(siteMediamarkt, "main", Pattern.compile("\\{\"currency\":\"EUR\",\"price\":([0-9]+(?:\\.[0-9]{0,2})?),\"").pattern())); //{"currency":"EUR","price":59.99,"
             regexes.add(new TablePriceTrackingSiteRegex(siteBeyerdynamic, "main", Pattern.compile("<meta\\sproperty=\"product:price:amount\"\\scontent=\"([0-9]+(?:\\.[0-9]{0,2})?)\"/><script\\ssrc=\".{5,400}\"\\scrossorigin=\"anonymous\"></script>").pattern())); //<meta property="product:price:amount" content="299.00"/><script src="https://polyfill.io/v3/polyfill.min.js?features=default%2CArray.prototype.includes%2CPromise" crossorigin="anonymous"></script>
             regexes.add(new TablePriceTrackingSiteRegex(siteSaturn, "main", Pattern.compile("<meta\\sproperty=\"product:price:amount\"\\scontent=\"([0-9]+(?:\\.[0-9]{0,2})?)\"/>").pattern())); //<meta property="product:price:amount" content="299.00"/>
-            regexes.add(new TablePriceTrackingSiteRegex(siteGoogleStore, "main", Pattern.compile("<span\\sclass=\"is-price\">([0-9]+(?:\\,[0-9]{0,2})?)\\s").pattern())); //<span class="is-price">79,00 €</span>
+            regexes.add(new TablePriceTrackingSiteRegex(siteGoogleStore, "main", Pattern.compile("<span\\sclass=\"is-price\">([0-9]+(?:,[0-9]{0,2})?)").pattern())); //<span class="is-price">79,00 €</span>
             regexes.add(new TablePriceTrackingSiteRegex(siteAlternate, "main", Pattern.compile("<span\\sitemprop=\"price\"\\scontent=\"([0-9]+(?:\\.[0-9]{0,2})?)\">").pattern())); //<span itemprop="price" content="94.9">
             regexes.forEach(sqlServer::save);
 

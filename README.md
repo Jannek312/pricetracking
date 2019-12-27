@@ -15,7 +15,6 @@ TODO
 
 ## TODO's
 
-* Logging
-* Config
-* Use random user agents. 
 * Installation and Usage in this file O.o
+* Logging
+* sql caching

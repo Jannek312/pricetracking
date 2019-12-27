@@ -62,7 +62,8 @@ public class PriceTracker implements Runnable {
 
     private void scan() {
         final List<TablePriceTrackingTackedProduct> products =
-                sqlServer.find(TablePriceTrackingTackedProduct.class).findList();
+                sqlServer.find(TablePriceTrackingTackedProduct.class)
+                        .where().eq("enabled", true).findList();
 
         products.forEach(product -> {
             try {
