@@ -4,6 +4,8 @@ import de.jannek.price.tracking.sql.entities.TablePriceTrackingData;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingDataRaw;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingSite;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingTackedProduct;
+import de.jannek.price.tracking.utils.WebhookConfiguration;
+import de.jannek.price.tracking.utils.WebhookUtil;
 import io.ebean.EbeanServer;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -27,11 +29,14 @@ public class PriceTracker implements Runnable {
     private final int interval;
     private final boolean onlySaveChanges;
 
-    public PriceTracker(final EbeanServer sqlServer, final boolean saveRaw, final int interval, final boolean onlySaveChanges) {
+    private final WebhookConfiguration webhookConfiguration;
+
+    public PriceTracker(final EbeanServer sqlServer, final boolean saveRaw, final int interval, final boolean onlySaveChanges, final WebhookConfiguration webhookConfiguration) {
         this.sqlServer = sqlServer;
         this.saveRaw = saveRaw;
         this.interval = interval;
         this.onlySaveChanges = onlySaveChanges;
+        this.webhookConfiguration = webhookConfiguration;
     }
 
     @Override
@@ -99,6 +104,7 @@ public class PriceTracker implements Runnable {
                         logger.info(String.format("Price %s changed from %.2f to %.2f for product %d", siteRegex.getType(),
                                 lastData == null ? 0 : lastData.getPrice(),
                                 price, product.getId()));
+                        priceChanged(String.valueOf(product.getId()), product.getUrl(), lastData == null ? null : lastData.getPrice(), price);
                     } else {
                         logger.info(String.format("Product %s %d has the same price (%.2f)!", siteRegex.getType(), product.getId(), price));
                     }
@@ -107,7 +113,7 @@ public class PriceTracker implements Runnable {
                         return;
                     }
 
-                    final TablePriceTrackingData trackingData = new TablePriceTrackingData(product.getId(), siteRegex.getType(), price); //TODO
+                    final TablePriceTrackingData trackingData = new TablePriceTrackingData(product.getId(), siteRegex.getType(), price);
                     sqlServer.save(trackingData);
                     logger.info(String.format("Saved %s price of product %d to database! ID: %d", siteRegex.getType(), product.getId(), trackingData.getId()));
 
@@ -121,6 +127,23 @@ public class PriceTracker implements Runnable {
             }
         });
     }
+
+    private void priceChanged(final String productName, final String productUrl, Double oldPrice, final Double newPrice) {
+        if (webhookConfiguration.isEnabled()) {
+
+            final String content;
+            if (oldPrice == null) {
+                content = String.format(webhookConfiguration.getContentPriceNew(), productName, productUrl, newPrice);
+            } else if (newPrice < oldPrice) {
+                content = String.format(webhookConfiguration.getContentPriceDown(), productName, productUrl, oldPrice, newPrice, (100 / oldPrice * newPrice));
+            } else {
+                content = String.format(webhookConfiguration.getContentPriceUp(), productName, productUrl, oldPrice, newPrice, (100 / oldPrice * newPrice));
+            }
+
+            WebhookUtil.getInstance().call(webhookConfiguration.getUrl(), content);
+        }
+    }
+
 
     private TablePriceTrackingData findLastData(final long productId, final String type) {
         final TablePriceTrackingData lastData = sqlServer.find(TablePriceTrackingData.class).

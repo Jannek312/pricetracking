@@ -5,6 +5,7 @@ import de.jannek.price.tracking.sql.DatabaseConfiguration;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingSite;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingSiteRegex;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingTackedProduct;
+import de.jannek.price.tracking.utils.WebhookConfiguration;
 import io.ebean.EbeanServer;
 import lombok.Getter;
 import org.apache.log4j.LogManager;
@@ -56,7 +57,6 @@ public class PriceTracking {
 
         if (INIT_DATA) {
 
-
             logger.info(String.format(""));
             logger.info(String.format("Adding Site amazon.de"));
             final TablePriceTrackingSite siteAmazonDe = new TablePriceTrackingSite("Amazon.de",
@@ -106,8 +106,15 @@ public class PriceTracking {
             sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/amiron-wireless-copper.html?cid=mm_produkt"));
         }
 
+        final WebhookConfiguration webhookConfiguration = new WebhookConfiguration(
+                Boolean.parseBoolean(properties.getProperty("webhook.enabled")),
+                properties.getProperty("webhook.url"),
+                properties.getProperty("webhook.content.error"),
+                properties.getProperty("webhook.content.price.up"),
+                properties.getProperty("webhook.content.price.down"),
+                properties.getProperty("webhook.content.price.new"));
 
-        new Thread(new PriceTracker(sqlServer, false, 120, true), "Price_Tracker").start();
+        new Thread(new PriceTracker(sqlServer, false, 120, true, webhookConfiguration), "Price_Tracker").start();
 
 
     }
