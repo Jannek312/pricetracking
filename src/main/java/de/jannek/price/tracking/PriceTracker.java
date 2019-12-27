@@ -10,6 +10,7 @@ import io.ebean.EbeanServer;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,7 +25,7 @@ public class PriceTracker implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(PriceTracker.class);
 
-    private EbeanServer sqlServer;
+    private final EbeanServer sqlServer;
     private final boolean saveRaw;
     private final int interval;
     private final boolean onlySaveChanges;
@@ -82,13 +83,15 @@ public class PriceTracker implements Runnable {
                 final String content = new WebRequest().getContent(product.getUrl());
                 logger.info(String.format("Done! length: %d (%s...)", content.length(), content.substring(0, 20)));
 
+                final String pageTitle = Normalizer.normalize(content.substring(content.indexOf("<title>")+"<title>".length(), content.indexOf("</title>")), Normalizer.Form.NFKC);
+
                 sites.forEach(site -> site.getTablePriceTrackingSiteRegexes().forEach(siteRegex -> {
                     final Matcher matcher = Pattern.compile(siteRegex.getPriceRegex()).matcher(content);
                     final Double price;
                     if (matcher.find() || matcher.matches()) {
                         price = Double.parseDouble(matcher.group(1).replace(",", "."));
                     } else {
-                        logger.info(String.format("No price found!"));
+                        logger.info("No price found!");
                         return;
                     }
 
@@ -104,7 +107,7 @@ public class PriceTracker implements Runnable {
                         logger.info(String.format("Price %s changed from %.2f to %.2f for product %d", siteRegex.getType(),
                                 lastData == null ? 0 : lastData.getPrice(),
                                 price, product.getId()));
-                        priceChanged(String.valueOf(product.getId()), product.getUrl(), lastData == null ? null : lastData.getPrice(), price);
+                        priceChanged(pageTitle, product.getUrl(), lastData == null ? null : lastData.getPrice(), price);
                     } else {
                         logger.info(String.format("Product %s %d has the same price (%.2f)!", siteRegex.getType(), product.getId(), price));
                     }
@@ -133,6 +136,7 @@ public class PriceTracker implements Runnable {
 
             final String content;
             if (oldPrice == null) {
+                if (PriceTracking.INIT_DATA) webhookConfiguration.setEnabled(false); //TODO remove; only send first product to prevent spam ;)
                 content = String.format(webhookConfiguration.getContentPriceNew(), productName, productUrl, newPrice);
             } else if (newPrice < oldPrice) {
                 content = String.format(webhookConfiguration.getContentPriceDown(), productName, productUrl, oldPrice, newPrice, (100 / oldPrice * newPrice));
@@ -146,12 +150,11 @@ public class PriceTracker implements Runnable {
 
 
     private TablePriceTrackingData findLastData(final long productId, final String type) {
-        final TablePriceTrackingData lastData = sqlServer.find(TablePriceTrackingData.class).
+        return sqlServer.find(TablePriceTrackingData.class).
                 where().eq("product_id", productId)
                 .eq("type", type)
                 .order().desc("when_created")
                 .setMaxRows(1).findOne();
-        return lastData;
     }
 
 }

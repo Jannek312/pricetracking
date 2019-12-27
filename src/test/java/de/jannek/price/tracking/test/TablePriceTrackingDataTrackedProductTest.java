@@ -15,6 +15,7 @@ public class TablePriceTrackingDataTrackedProductTest {
 
         final TablePriceTrackingTackedProduct tablePriceTrackingTackedProduct = new TablePriceTrackingTackedProduct();
         tablePriceTrackingTackedProduct.setUrl("https://www.amazon.de/gp/hjkasdhat");
+
         tablePriceTrackingTackedProduct.save();
 
         // find using an expression query

@@ -15,6 +15,7 @@ public class TablePriceTrackingDataTest {
     public void insertFindDelete() {
         final TablePriceTrackingData priceTracking = new TablePriceTrackingData();
         priceTracking.setPrice(329.65);
+        priceTracking.setType("main");
         DB.save(priceTracking);
 
         final TablePriceTrackingData foundPriceTracking = DB.find(TablePriceTrackingData.class)

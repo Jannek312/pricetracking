@@ -25,11 +25,14 @@ import java.util.regex.Pattern;
  */
 public class PriceTracking {
 
-    public static final boolean INIT_DATA = true; //TODO remove
+    public static boolean INIT_DATA = true; //TODO remove
 
     private static final String PROPERTIES_FILENAME = "price-tracking.properties";
 
     public static void main(String[] args) {
+        if (args != null && args.length == 1 && args[0].toLowerCase().equals("true")) {
+            INIT_DATA = true;
+        }
         new PriceTracking().run();
     }
 
@@ -41,24 +44,24 @@ public class PriceTracking {
     @Getter
     private Properties properties;
 
-    public void run() {
+    private void run() {
         DOMConfigurator.configure("log4j.xml");
 
         if (!loadProperties()) {
-            logger.error(String.format("Could not load properties!"));
+            logger.error("Could not load properties!");
             return;
         }
 
         if (!connectToDatabase()) {
-            logger.error(String.format("Could not connect to database!"));
+            logger.error("Could not connect to database!");
             return;
         }
 
 
         if (INIT_DATA) {
 
-            logger.info(String.format(""));
-            logger.info(String.format("Adding Site amazon.de"));
+            logger.info("");
+            logger.info("Adding Site amazon.de");
             final TablePriceTrackingSite siteAmazonDe = new TablePriceTrackingSite("Amazon.de",
                     Pattern.compile("^https://(www.)?amazon\\.de.*").pattern(),
                     null);
@@ -75,23 +78,41 @@ public class PriceTracking {
                     Pattern.compile("^https://(www.)?beyerdynamic\\.de.*").pattern(),
                     null);
 
+            final TablePriceTrackingSite siteSaturn = new TablePriceTrackingSite("saturn.de",
+                    Pattern.compile("^https://(www.)?saturn\\.de.*").pattern(),
+                    null);
+
+            final TablePriceTrackingSite siteGoogleStore = new TablePriceTrackingSite("store.google.com",
+                    Pattern.compile("^https://(store.)?google\\.com.*").pattern(),
+                    null);
+
+            final TablePriceTrackingSite siteAlternate = new TablePriceTrackingSite("alternate.com",
+                    Pattern.compile("^https://(www.)?alternate\\.de.*").pattern(),
+                    null);
+
 
             sqlServer.save(siteAmazonDe);
             sqlServer.save(siteMindfactory);
             sqlServer.save(siteMediamarkt);
             sqlServer.save(siteBeyerdynamic);
+            sqlServer.save(siteSaturn);
+            sqlServer.save(siteGoogleStore);
+            sqlServer.save(siteAlternate);
 
-            logger.info(String.format("Adding regex"));
+            logger.info("Adding regex");
             List<TablePriceTrackingSiteRegex> regexes = new ArrayList<>();
             regexes.add(new TablePriceTrackingSiteRegex(siteAmazonDe, "main", "data-asin-price=\"([0-9]+(?:\\.[0-9]{0,2}))?\""));
             regexes.add(new TablePriceTrackingSiteRegex(siteAmazonDe, "used", Pattern.compile("<span\\sclass='a-color-price'>([0-9]+(?:\\,[0-9]{0,2}))?").pattern()));
             regexes.add(new TablePriceTrackingSiteRegex(siteMindfactory, "main", "'Artikelpreis':([0-9]+(?:\\.[0-9]{0,2}))?,")); //'Artikelpreis':225.61,
             regexes.add(new TablePriceTrackingSiteRegex(siteMediamarkt, "main", Pattern.compile("\\{\"currency\":\"EUR\",\"price\":([0-9]+(?:\\.[0-9]{0,2})?),\"").pattern())); //{"currency":"EUR","price":59.99,"
             regexes.add(new TablePriceTrackingSiteRegex(siteBeyerdynamic, "main", Pattern.compile("<meta\\sproperty=\"product:price:amount\"\\scontent=\"([0-9]+(?:\\.[0-9]{0,2})?)\"/><script\\ssrc=\".{5,400}\"\\scrossorigin=\"anonymous\"></script>").pattern())); //<meta property="product:price:amount" content="299.00"/><script src="https://polyfill.io/v3/polyfill.min.js?features=default%2CArray.prototype.includes%2CPromise" crossorigin="anonymous"></script>
+            regexes.add(new TablePriceTrackingSiteRegex(siteSaturn, "main", Pattern.compile("<meta\\sproperty=\"product:price:amount\"\\scontent=\"([0-9]+(?:\\.[0-9]{0,2})?)\"/>").pattern())); //<meta property="product:price:amount" content="299.00"/>
+            regexes.add(new TablePriceTrackingSiteRegex(siteGoogleStore, "main", Pattern.compile("<span\\sclass=\"is-price\">([0-9]+(?:\\,[0-9]{0,2})?)\\s").pattern())); //<span class="is-price">79,00 €</span>
+            regexes.add(new TablePriceTrackingSiteRegex(siteAlternate, "main", Pattern.compile("<span\\sitemprop=\"price\"\\scontent=\"([0-9]+(?:\\.[0-9]{0,2})?)\">").pattern())); //<span itemprop="price" content="94.9">
             regexes.forEach(sqlServer::save);
 
 
-            logger.info(String.format("Adding products"));
+            logger.info("Adding products");
             sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07G9J35CQ/"));
             sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B06XP9N2VP/"));
             sqlServer.save(new TablePriceTrackingTackedProduct("https://www.amazon.de/gp/product/B07GRTYDDV/"));
@@ -104,6 +125,12 @@ public class PriceTracking {
 
             sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/lagoon-anc-explorer.html"));
             sqlServer.save(new TablePriceTrackingTackedProduct("https://www.beyerdynamic.de/amiron-wireless-copper.html?cid=mm_produkt"));
+
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.saturn.de/de/product/_htc-vive-wlan-adapter-2478414.html"));
+
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://store.google.com/de/product/pixel_stand?hl=en-DE"));
+
+            sqlServer.save(new TablePriceTrackingTackedProduct("https://www.alternate.de/Samsung/860-QVO-1-TB-Solid-State-Drive/html/product/1504256"));
         }
 
         final WebhookConfiguration webhookConfiguration = new WebhookConfiguration(
