@@ -19,4 +19,6 @@ Not that much yet. Currently you can only maintain the database manually to add 
 ## TODO's
 
 * Logging
-* sql caching
+* SQL caching
+* Error handling
+* Amazon offer-listing implementation: https://www.amazon.de/gp/offer-listing/B07C419JLV/

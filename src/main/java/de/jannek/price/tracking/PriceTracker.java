@@ -4,6 +4,7 @@ import de.jannek.price.tracking.sql.entities.TablePriceTrackingData;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingDataRaw;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingSite;
 import de.jannek.price.tracking.sql.entities.TablePriceTrackingTackedProduct;
+import de.jannek.price.tracking.utils.WebRequest;
 import de.jannek.price.tracking.utils.WebhookConfiguration;
 import de.jannek.price.tracking.utils.WebhookUtil;
 import io.ebean.EbeanServer;
@@ -103,7 +104,7 @@ public class PriceTracker implements Runnable {
                         logger.info(String.format("Price %s changed from %.2f to %.2f for product %d", siteRegex.getType(),
                                 lastData == null ? 0 : lastData.getPrice(),
                                 price, product.getId()));
-                        priceChanged(pageTitle, product.getUrl(), lastData == null ? null : lastData.getPrice(), price);
+                        priceChanged(pageTitle, product.getUrl(), siteRegex.getType(), lastData == null ? null : lastData.getPrice(), price);
                     } else {
                         logger.info(String.format("Product %s %d has the same price (%.2f)!", siteRegex.getType(), product.getId(), price));
                     }
@@ -133,18 +134,37 @@ public class PriceTracker implements Runnable {
         });
     }
 
-    private void priceChanged(final String productName, final String productUrl, Double oldPrice, final Double newPrice) {
+    private void priceChanged(
+            final String productName,
+            final String productUrl,
+            final String type,
+            final Double oldPrice,
+            final Double newPrice) {
         if (webhookConfiguration.isEnabled()) {
 
             final String content;
             if (oldPrice == null) {
                 if (PriceTracking.INIT_DATA)
                     webhookConfiguration.setEnabled(false); //TODO remove; only send first product to prevent spam ;)
-                content = String.format(webhookConfiguration.getContentPriceNew(), productName, productUrl, newPrice);
+                content = String.format(webhookConfiguration.getContentPriceNew(), productName, productUrl, type, newPrice);
             } else if (newPrice < oldPrice) {
-                content = String.format(webhookConfiguration.getContentPriceDown(), productName, productUrl, oldPrice, newPrice, (100 / oldPrice * newPrice));
+                content = String.format(
+                        webhookConfiguration.getContentPriceDown(),
+                        productName,
+                        productUrl,
+                        type,
+                        oldPrice,
+                        newPrice,
+                        Math.abs(100 - (100 / oldPrice * newPrice)));
             } else {
-                content = String.format(webhookConfiguration.getContentPriceUp(), productName, productUrl, oldPrice, newPrice, (100 / oldPrice * newPrice));
+                content = String.format(
+                        webhookConfiguration.getContentPriceUp(),
+                        productName,
+                        productUrl,
+                        type,
+                        oldPrice,
+                        newPrice,
+                        (100 - (100 / oldPrice * newPrice)) * -1);
             }
 
             WebhookUtil.getInstance().call(webhookConfiguration.getUrl(), content);

@@ -1,6 +1,4 @@
-package de.jannek.price.tracking;
-
-import de.jannek.price.tracking.utils.UserAgentUtil;
+package de.jannek.price.tracking.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +22,7 @@ public class WebRequest {
 
         try {
             final URLConnection connection = url.openConnection();
+            connection.setReadTimeout(1000 * 6);
             connection.setRequestProperty("User-Agent", UserAgentUtil.getInstance().getUserAgent());
 
             final BufferedReader reader = new BufferedReader(
